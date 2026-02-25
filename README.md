@@ -1,4 +1,4 @@
-# robot-coordination-system
+# Robot Coordination System
 
 ## To download the application:
 
