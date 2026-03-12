@@ -1,5 +1,9 @@
+use crate::{
+    enums::robot_status::RobotStatus,
+    task::entity::{TASK_QUEUE, Task},
+    zone::behaviour::get_zone::get_zone,
+};
 use std::{sync::Mutex, thread, time::Duration};
-use crate::{enums::robot_status::RobotStatus, task::entity::TASK_QUEUE};
 
 // The main interface of the Robot entity
 pub struct Robot {
@@ -7,16 +11,18 @@ pub struct Robot {
     pub(crate) name: String,
     pub(crate) status: Mutex<RobotStatus>,
     pub current_task_id: Mutex<Option<u32>>,
+    pub current_zone_id: Mutex<Option<u32>>,
 }
 
 impl Robot {
     // The defualt constructor of the Robot entity
-    pub fn new (id: u32, name: &str) -> Self {
+    pub fn new(id: u32, name: &str) -> Self {
         Self {
             id,
             name: name.to_string(),
             status: RobotStatus::IDLE.into(),
             current_task_id: Mutex::new(None),
+            current_zone_id: Mutex::new(None),
         }
     }
 
@@ -27,42 +33,45 @@ impl Robot {
         println!("Robot {} (ID: {}) is pulsing...", self.name, self.id);
     }
 
-    // Robot takes a task and executes it
-    pub fn take_task (&self) {
-        // Dequeing a task to execute
-        let task = {
-            let mut queue = TASK_QUEUE.lock().unwrap();
-            queue.pop_front() // dequeue an element and return 
-            // The lock is automatically released here because 'queue' goes out of scope
-        };
+    // Robot attempts to take a task
+    pub fn take_task(&self) -> Option<Task> {
+        // Dequeing a task
+        let mut queue = TASK_QUEUE.lock().unwrap();
 
-        // If there is a task, update status => execute task => update status again
-        if let Some(t) = task {
-            // Mark as busy
-            {
-                // Update status to busy
-                let mut s = self.status.lock().unwrap();
-                *s = RobotStatus::BUSY;
+        queue.pop_front() // dequeue an element and return 
+        // The lock is automatically released here because 'queue' goes out of scope
+    }
 
-                // Store id of task being executed (for task display)
-                let mut t_id = self.current_task_id.lock().unwrap();
-                *t_id = Some(t.id);
-            }
+    // Robot executes the task
+    pub fn execute_task(&self, task: Task) {
+        // Lock zone to prevent other robots from using it
+        let zone = get_zone(task.get_zone_id());
+        let _zone_guard = zone.lock.lock().unwrap();
 
-            // Execute the task
-                // Note: this is only a mock simulation of the real execution
-            thread::sleep(Duration::from_secs(t.get_duration()));
+        // Mark as busy
+        {
+            // Scope locks to avoide race conditions
+            // Update status to busy
+            *self.status.lock().unwrap() = RobotStatus::BUSY;
 
-            // Mark as Idle
-            {
-                // Update status to idle
-                let mut s = self.status.lock().unwrap();
-                *s = RobotStatus::IDLE;
+            // Store id of task being executed and zone occupied (for display)
+            *self.current_task_id.lock().unwrap() = Some(task.id);
+            *self.current_zone_id.lock().unwrap() = Some(task.get_zone_id());
+        }
 
-                // Empty the content of the task being executed
-                let mut t_id = self.current_task_id.lock().unwrap();
-                *t_id = None;
-            }
+        // Execute the task
+        // Note: this is a mock simulation of the real execution
+        thread::sleep(Duration::from_secs(task.get_duration()));
+
+        // Mark as Idle
+        {
+            // Scope locks to avoide race conditions
+            // Update status to idle
+            *self.status.lock().unwrap() = RobotStatus::IDLE;
+
+            // Empty the content of the task being executed and zone occupied
+            *self.current_task_id.lock().unwrap() = None;
+            *self.current_zone_id.lock().unwrap() = None;
         }
     }
 }
