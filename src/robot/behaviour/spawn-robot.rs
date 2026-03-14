@@ -1,5 +1,5 @@
-use std::{sync::Arc, thread, time::Duration};
 use crate::robot::entity::Robot;
+use std::{sync::Arc, thread, time::Duration};
 
 // create a thread to run the passed robot
 pub fn spawn_robot(robot: Arc<Robot>) {
@@ -17,7 +17,11 @@ pub fn spawn_robot(robot: Arc<Robot>) {
 
         // the main functionality run by the robot
         loop {
-            robot.take_task();
+            // Take a task
+            if let Some(task) = robot.take_task() {
+                // Execute the task (if exists)
+                robot.execute_task(task);
+            }
             thread::sleep(Duration::from_secs(1));
         }
     });
