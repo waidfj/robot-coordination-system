@@ -3,11 +3,14 @@ use crate::{
     task::entity::{TASK_QUEUE, Task},
     zone::behaviour::get_zone::get_zone,
 };
+use std::sync::{Arc, RwLock};
+use std::collections::HashMap;
 use std::{sync::Mutex, thread, time::Duration};
+pub type HeartbeatRegistry = Arc<RwLock<HashMap<u32, bool>>>;
 
 // The main interface of the Robot entity
 pub struct Robot {
-    id: u32,
+    pub(crate) id: u32,
     pub(crate) name: String,
     pub(crate) status: Mutex<RobotStatus>,
     pub current_task_id: Mutex<Option<u32>>,
@@ -27,12 +30,15 @@ impl Robot {
     }
 
     //////////////////////////////////////////////////
-    // TODO: implement hearbeat logic for the robot //
+    // Heartbeat logic for the robot              //
     //////////////////////////////////////////////////
-    pub fn update_heartbeat(&self) {
-        println!("Robot {} (ID: {}) is pulsing...", self.name, self.id);
+    pub fn send_heartbeat(&self, registry: &HeartbeatRegistry) {
+        if let Ok(mut map) = registry.write() {
+            if let Some(flag) = map.get_mut(&self.id) {
+                *flag = true;
+            }
+        }
     }
-
     // Robot attempts to take a task
     pub fn take_task(&self) -> Option<Task> {
         // Dequeing a task

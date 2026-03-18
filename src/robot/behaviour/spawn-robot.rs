@@ -1,17 +1,19 @@
 use crate::robot::entity::Robot;
+use crate::health::HeartbeatRegistry;
 use std::{sync::Arc, thread, time::Duration};
 
 // create a thread to run the passed robot
-pub fn spawn_robot(robot: Arc<Robot>) {
+pub fn spawn_robot(robot: Arc<Robot>, heartbeat_registry: HeartbeatRegistry) {
     // the main thread for the robot functionality
     thread::spawn(move || {
-        let heartbeat_robot = Arc::clone(&robot);
+        let reg_clone = Arc::clone(&heartbeat_registry);
+        let robot_clone = Arc::clone(&robot);
 
         // a child process that will update the heartbeat of the robot
         thread::spawn(move || {
             loop {
-                heartbeat_robot.update_heartbeat();
-                thread::sleep(Duration::from_secs(1));
+                robot_clone.send_heartbeat(&reg_clone);
+                thread::sleep(Duration::from_secs(3)); // Send heartbeat every 2 seconds
             }
         });
 

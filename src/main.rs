@@ -2,6 +2,8 @@ mod enums;
 mod robot;
 mod task;
 mod zone;
+mod health;
+
 
 use crate::{
     task::behaviour::generate_tasks::generate_tasks,
@@ -9,6 +11,7 @@ use crate::{
         behaviour::{get_zone::get_zone, initialize_zones::initialize_zones},
         entity::ZONE_REGISTRY,
     },
+    health::{new_heartbeat_registry, register_robot, monitor_heartbeats},
 };
 use robot::{behaviour::spawn_robot::spawn_robot, entity::Robot};
 use std::{sync::Arc, thread, time::Duration};
@@ -23,9 +26,15 @@ fn main() {
     ///////////////////////////////////////////////////
     let mut fleet = Vec::new();
 
+    let heartbeat_registry = new_heartbeat_registry();
+
+
     // Create a few robots
     for i in 1..=3 {
         let robot_instance = Robot::new(i, &format!("Robot {}", i));
+
+        // Register the robot in the heartbeat system
+        register_robot(&heartbeat_registry, i);
 
         // Wrap it in an Arc so both 'main' and the thread can own it
         let shared_robot = Arc::new(robot_instance);
@@ -34,12 +43,17 @@ fn main() {
         fleet.push(Arc::clone(&shared_robot));
 
         // Send the robot off to work
-        spawn_robot(shared_robot);
+        spawn_robot(shared_robot, Arc::clone(&heartbeat_registry));
     }
+    // Start the heartbeat monitor thread
+    monitor_heartbeats(fleet.clone(), heartbeat_registry);
+
+     // Main loop to display status of robots and zones
 
     // IMPORTANT DECLARATION: this code is AI generated
     loop {
         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+        println!("------------------------------------------------------------");
         println!(
             "{:<10} | {:<10} | {:<10} | {:<15}",
             "Robot", "Status", "Task", "Location"
@@ -77,6 +91,7 @@ fn main() {
                 println!("[ID: {:<2}] {:<12}: {}", zone.id, zone.name, status);
             }
         }
+        println!("------------------------------------------------");
         thread::sleep(Duration::from_millis(500));
     }
 }
