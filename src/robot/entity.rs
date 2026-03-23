@@ -1,13 +1,22 @@
 use crate::{
     enums::robot_status::RobotStatus,
+    health::entity::HEARTBEAT_REGISTRY,
     task::entity::{TASK_QUEUE, Task},
     zone::behaviour::get_zone::get_zone,
 };
 use std::{sync::Mutex, thread, time::Duration};
+use std::{
+    sync::{Arc, LazyLock},
+    time::Instant,
+};
+
+// The global registry that will hold all the robots in the system
+pub static ROBOT_REGISTRY: LazyLock<Mutex<Vec<Arc<Robot>>>> =
+    LazyLock::new(|| Mutex::new(Vec::new()));
 
 // The main interface of the Robot entity
 pub struct Robot {
-    id: u32,
+    pub(crate) id: u32,
     pub(crate) name: String,
     pub(crate) status: Mutex<RobotStatus>,
     pub current_task_id: Mutex<Option<u32>>,
@@ -26,11 +35,15 @@ impl Robot {
         }
     }
 
-    //////////////////////////////////////////////////
-    // TODO: implement hearbeat logic for the robot //
-    //////////////////////////////////////////////////
-    pub fn update_heartbeat(&self) {
-        println!("Robot {} (ID: {}) is pulsing...", self.name, self.id);
+    // Robot updates it's activity
+    pub fn send_heartbeat(&self) {
+        {
+            // lock the heartbeat registry and update time
+            let mut map = HEARTBEAT_REGISTRY.lock().unwrap();
+            map.insert(self.id, Instant::now());
+        }
+
+        thread::sleep(Duration::from_secs(2));
     }
 
     // Robot attempts to take a task

@@ -5,13 +5,16 @@ use std::{sync::Arc, thread, time::Duration};
 pub fn spawn_robot(robot: Arc<Robot>) {
     // the main thread for the robot functionality
     thread::spawn(move || {
-        let heartbeat_robot = Arc::clone(&robot);
+        let robot_clone = Arc::clone(&robot);
 
+        ////////////////////////////////////////////////////////////////
+        // TODO: Implement dying logic for the robots, use batteries //
+        ///////////////////////////////////////////////////////////////
         // a child process that will update the heartbeat of the robot
         thread::spawn(move || {
             loop {
-                heartbeat_robot.update_heartbeat();
-                thread::sleep(Duration::from_secs(1));
+                robot_clone.send_heartbeat();
+                thread::sleep(Duration::from_secs(2)); // Send heartbeat every 2 seconds
             }
         });
 
