@@ -1,6 +1,3 @@
-pub mod heartbeat;
+pub mod entity;
 
-pub use heartbeat::{
-    new_heartbeat_registry, register_robot, 
-    monitor_heartbeats, HeartbeatRegistry,
-};
+pub mod behaviour;

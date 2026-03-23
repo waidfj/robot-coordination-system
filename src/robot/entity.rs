@@ -1,12 +1,18 @@
 use crate::{
     enums::robot_status::RobotStatus,
+    health::entity::HEARTBEAT_REGISTRY,
     task::entity::{TASK_QUEUE, Task},
     zone::behaviour::get_zone::get_zone,
 };
-use std::sync::{Arc, RwLock};
-use std::collections::HashMap;
 use std::{sync::Mutex, thread, time::Duration};
-pub type HeartbeatRegistry = Arc<RwLock<HashMap<u32, bool>>>;
+use std::{
+    sync::{Arc, LazyLock},
+    time::Instant,
+};
+
+// The global registry that will hold all the robots in the system
+pub static ROBOT_REGISTRY: LazyLock<Mutex<Vec<Arc<Robot>>>> =
+    LazyLock::new(|| Mutex::new(Vec::new()));
 
 // The main interface of the Robot entity
 pub struct Robot {
@@ -29,16 +35,17 @@ impl Robot {
         }
     }
 
-    //////////////////////////////////////////////////
-    // Heartbeat logic for the robot              //
-    //////////////////////////////////////////////////
-    pub fn send_heartbeat(&self, registry: &HeartbeatRegistry) {
-        if let Ok(mut map) = registry.write() {
-            if let Some(flag) = map.get_mut(&self.id) {
-                *flag = true;
-            }
+    // Robot updates it's activity
+    pub fn send_heartbeat(&self) {
+        {
+            // lock the heartbeat registry and update time
+            let mut map = HEARTBEAT_REGISTRY.lock().unwrap();
+            map.insert(self.id, Instant::now());
         }
+
+        thread::sleep(Duration::from_secs(2));
     }
+
     // Robot attempts to take a task
     pub fn take_task(&self) -> Option<Task> {
         // Dequeing a task
