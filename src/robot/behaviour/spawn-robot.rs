@@ -5,7 +5,11 @@ use std::{sync::Arc, thread, time::Duration};
 pub fn spawn_robot(robot: Arc<Robot>) {
     // the main thread for the robot functionality
     thread::spawn(move || {
-        let robot_clone = Arc::clone(&robot);
+       let robot_clone = Arc::clone(&robot);     
+       /* if robot_clone.id == 1    //Thread time out test!
+         {
+        thread::sleep(Duration::from_secs(6)); // Pause 6s to trigger OFFLINE
+        }*/
 
         ////////////////////////////////////////////////////////////////
         // TODO: Implement dying logic for the robots, use batteries //

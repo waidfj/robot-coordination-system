@@ -26,6 +26,7 @@ pub struct Robot {
 impl Robot {
     // The defualt constructor of the Robot entity
     pub fn new(id: u32, name: &str) -> Self {
+        HEARTBEAT_REGISTRY.lock().unwrap().insert(id, Instant::now());
         Self {
             id,
             name: name.to_string(),
