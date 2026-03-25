@@ -4,7 +4,7 @@ use crate::{
     task::entity::{TASK_QUEUE, Task},
     zone::behaviour::get_zone::get_zone,
 };
-use std::{sync::Mutex, thread, time::Duration};
+use std::{sync::{Mutex, atomic::{AtomicU32, Ordering}}, thread, time::Duration};
 use std::{
     sync::{Arc, LazyLock},
     time::Instant,
@@ -21,6 +21,7 @@ pub struct Robot {
     pub(crate) status: Mutex<RobotStatus>,
     pub current_task_id: Mutex<Option<u32>>,
     pub current_zone_id: Mutex<Option<u32>>,
+    pub battery: AtomicU32
 }
 
 impl Robot {
@@ -32,18 +33,16 @@ impl Robot {
             status: RobotStatus::IDLE.into(),
             current_task_id: Mutex::new(None),
             current_zone_id: Mutex::new(None),
+            battery: 100.into()
         }
     }
 
     // Robot updates it's activity
     pub fn send_heartbeat(&self) {
-        {
-            // lock the heartbeat registry and update time
-            let mut map = HEARTBEAT_REGISTRY.lock().unwrap();
+        // lock the heartbeat registry and update time
+        if let Ok(mut map) = HEARTBEAT_REGISTRY.try_lock() {
             map.insert(self.id, Instant::now());
         }
-
-        thread::sleep(Duration::from_secs(2));
     }
 
     // Robot attempts to take a task
@@ -74,7 +73,17 @@ impl Robot {
 
         // Execute the task
         // Note: this is a mock simulation of the real execution
-        thread::sleep(Duration::from_secs(task.get_duration()));
+        for _i in 1..=task.get_duration() {
+            let battery = self.battery.load(Ordering::SeqCst);
+
+            if battery != 0 {
+                self.set_battery(battery-10);
+                thread::sleep(Duration::from_secs(1));
+            } else {
+                // println!("Now robot no. {} zero", self.id);
+                return
+            }
+        }
 
         // Mark as Idle
         {
@@ -86,5 +95,10 @@ impl Robot {
             *self.current_task_id.lock().unwrap() = None;
             *self.current_zone_id.lock().unwrap() = None;
         }
+    }
+
+    // Set the batter to a new value
+    pub fn set_battery(&self, battery: u32) {
+        self.battery.store(battery, Ordering::SeqCst);
     }
 }
