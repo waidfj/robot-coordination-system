@@ -5,10 +5,10 @@ mod task;
 mod zone;
 
 use crate::{
-    health::behaviour::update_health::update_health,
+    health::behaviour::update_health::{DEATH_COUNT, update_health},
     robot::{
         behaviour::generate_robots::generate_robots,
-        entity::{ROBOT_REGISTRY, Robot},
+        entity::ROBOT_REGISTRY,
     },
     task::behaviour::generate_tasks::generate_tasks,
     zone::{
@@ -16,7 +16,7 @@ use crate::{
         entity::ZONE_REGISTRY,
     },
 };
-use std::{sync::Arc, thread, time::Duration};
+use std::{sync::atomic::Ordering, thread, time::Duration};
 
 fn main() {
     // Initialize zones, generate tasks and robots
@@ -24,12 +24,13 @@ fn main() {
     generate_tasks(10);
     generate_robots(3);
 
+    update_health();
+
     // Main loop to display status of robots and zones
     // IMPORTANT DECLARATION: this code is AI generated
     loop {
-        thread::spawn(move || {
-            update_health();
-        });
+        // println!("Death Count: {}", DEATH_COUNT.load(Ordering::SeqCst));
+        // thread::sleep(Duration::from_secs(1));
 
         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
         println!("------------------------------------------------------------");
@@ -39,7 +40,11 @@ fn main() {
         );
         println!("------------------------------------------------------------");
 
-        let robots: Vec<Arc<Robot>> = ROBOT_REGISTRY.lock().unwrap().clone();
+        // let robots: Vec<Arc<Robot>> = ROBOT_REGISTRY.lock().unwrap().clone();
+        let robots = {
+            let guard = ROBOT_REGISTRY.lock().unwrap();
+            guard.clone() // Clone the Vec of Arcs
+        };
         for bot in robots {
             let s = bot.status.lock().unwrap();
             let t_id = bot.current_task_id.lock().unwrap();
@@ -72,6 +77,8 @@ fn main() {
             }
         }
         println!("------------------------------------------------");
+        println!("Death count: {}", DEATH_COUNT.load(Ordering::SeqCst));
+
         thread::sleep(Duration::from_millis(500));
     }
 }

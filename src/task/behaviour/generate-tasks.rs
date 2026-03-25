@@ -19,7 +19,7 @@ pub fn generate_tasks(number_of_tasks: u32) {
                 break;
             }
             count += 1;
-            let new_task = Task::new(count, 2, rng.gen_range(0..=(get_zones_count() - 1)));
+            let new_task = Task::new(count, 10, rng.gen_range(0..=(get_zones_count() - 1)));
 
             // Adding the task to the task queue
             // Scope the lock so it is released immediately after pushing
