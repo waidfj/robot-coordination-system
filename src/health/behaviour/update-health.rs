@@ -53,3 +53,50 @@ pub fn update_health() {
     });
 
 }
+
+
+#[cfg(test)]
+mod program_tests {
+    use super::*;
+    use crate::robot::entity::{Robot, ROBOT_REGISTRY};
+    use std::sync::Arc;
+    use std::time::{Duration, Instant};
+    fn Reset() {
+        // Clean up globals before each test
+        ROBOT_REGISTRY.lock().unwrap().clear();
+        HEARTBEAT_REGISTRY.lock().unwrap().clear();
+        DEATH_COUNT.store(0, Ordering::SeqCst);
+    }
+
+    #[test]
+    fn robots_status_test() {   //Battery Reaches 0 And robot Show offline
+        Reset();
+        let robot = Arc::new(Robot::new(999, "TestRobot"));
+        ROBOT_REGISTRY.lock().unwrap().push(Arc::clone(&robot));
+
+        // Start the health monitor
+        update_health();
+
+        // Give the monitor a moment to start its loop
+        std::thread::sleep(Duration::from_secs(1));
+
+        //Force a stale heartbeat 
+        {
+            let mut map = HEARTBEAT_REGISTRY.lock().unwrap();
+            map.insert(999, Instant::now() - Duration::from_secs(15)); // 15s ago, which is beyond the 10s timeout
+        }
+
+        // Force battery to zero (so heartbeat thread stops)
+        robot.set_battery(0);
+
+        // Wait for the monitoring loop to detect and mark OFFLINE
+        std::thread::sleep(Duration::from_secs(13));
+
+        let status = robot.status.lock().unwrap();
+        assert_eq!(*status, RobotStatus::OFFLINE, 
+                   "Robot should be marked OFFLINE when battery reaches zero");
+
+        assert!(DEATH_COUNT.load(Ordering::SeqCst) >= 1,
+                "DEATH_COUNT should have increased");
+    }
+}
