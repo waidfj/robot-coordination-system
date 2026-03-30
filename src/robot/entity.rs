@@ -16,9 +16,9 @@ pub static ROBOT_REGISTRY: LazyLock<Mutex<Vec<Arc<Robot>>>> =
 
 // The main interface of the Robot entity
 pub struct Robot {
-    pub(crate) id: u32,
-    pub(crate) name: String,
-    pub(crate) status: Mutex<RobotStatus>,
+    pub id: u32,
+    pub name: String,
+    pub status: Mutex<RobotStatus>,
     pub current_task_id: Mutex<Option<u32>>,
     pub current_zone_id: Mutex<Option<u32>>,
     pub battery: AtomicU32
@@ -78,15 +78,11 @@ impl Robot {
             }
         }
 
-        // Mark as Idle + recharge
+        // Mark as Idle
         {
             *self.status.lock().unwrap() = RobotStatus::IDLE;
             *self.current_task_id.lock().unwrap() = None;
             *self.current_zone_id.lock().unwrap() = None;
-        }
-
-        if self.battery.load(Ordering::SeqCst) == 0 {
-            self.battery.store(100, Ordering::SeqCst);
         }
     }
 
