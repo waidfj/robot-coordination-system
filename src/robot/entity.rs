@@ -90,5 +90,4 @@ impl Robot {
     pub fn set_battery(&self, battery: u32) {
         self.battery.store(battery, Ordering::SeqCst);
     }
-    
 }

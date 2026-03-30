@@ -41,15 +41,10 @@ pub fn update_health() {
                     if *status != RobotStatus::OFFLINE {
                         *status = RobotStatus::OFFLINE;
                         DEATH_COUNT.fetch_add(1, Ordering::SeqCst);
-                        // println!("Robot no. {} is marked offline (No heartbeat for 10s)", id);
                     }
-
-                    // *robot.status.lock().unwrap() = RobotStatus::OFFLINE;
-                    // DEATH_COUNT.fetch_add(1, Ordering::SeqCst);
                 }
             }
         }
 
     });
-
 }

@@ -23,9 +23,6 @@ fn main() {
     // Main loop to display status of robots and zones
     // IMPORTANT DECLARATION: this code is AI generated
     loop {
-        // println!("Death Count: {}", DEATH_COUNT.load(Ordering::SeqCst));
-        // thread::sleep(Duration::from_secs(1));
-
         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
         println!("------------------------------------------------------------");
         println!(
