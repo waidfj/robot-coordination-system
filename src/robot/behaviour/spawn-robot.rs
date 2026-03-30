@@ -18,7 +18,6 @@ pub fn spawn_robot(robot: Arc<Robot>) {
                     thread::sleep(Duration::from_secs(2)); // Send heartbeat every 2 seconds
                 } else {
                     let _ = tx.send("SHUTDOWN");
-                    // println!("Robot no. {} stopped beating", robot_clone.id);
                     break;
                 }
 
@@ -29,17 +28,14 @@ pub fn spawn_robot(robot: Arc<Robot>) {
         loop {
             if let Ok(msg) = rx.try_recv() {
                 if msg == "SHUTDOWN" {
-                    // println!("Robot no. {} recieved signal and will shut down 1", robot.id);
                     break;
                 }
             }
             // Take a task
             if let Some(task) = robot.take_task() {
-                // println!("Robot no: {}, took task no: {}", robot.id, task.id);
 
                 if let Ok(msg) = rx.try_recv() {
                     if msg == "SHUTDOWN" {
-                    // println!("Robot no. {} recieved signal and will shut down 2", robot.id);
                         break;
                     }
                 }
@@ -48,7 +44,6 @@ pub fn spawn_robot(robot: Arc<Robot>) {
 
                 if let Ok(msg) = rx.try_recv() {
                     if msg == "SHUTDOWN" {
-                    // println!("Robot no. {} recieved signal and will shut down 3", robot.id);
                         break;
                     }
                 }
@@ -58,7 +53,6 @@ pub fn spawn_robot(robot: Arc<Robot>) {
                 } else {
                     break;
                 }
-                // println!("Robot no: {}, has status of: {:?}", robot.id, *robot.status.lock().unwrap());
             }
         }
     });
