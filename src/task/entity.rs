@@ -9,9 +9,9 @@ pub static TASK_QUEUE: LazyLock<Mutex<VecDeque<Task>>> =
 
 // The main interface of the Task entity
 pub struct Task {
-    pub(crate) id: u32,
-    duration: u64,
-    zone_id: u32,
+    pub id: u32,
+    pub duration: u64,
+    pub zone_id: u32,
 }
 
 impl Task {

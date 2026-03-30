@@ -1,10 +1,4 @@
-mod enums;
-mod health;
-mod robot;
-mod task;
-mod zone;
-
-use crate::{
+use robot_coordination_system::{
     health::behaviour::update_health::{DEATH_COUNT, update_health},
     robot::{
         behaviour::generate_robots::generate_robots,
