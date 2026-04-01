@@ -49,7 +49,7 @@ pub fn spawn_robot(robot: Arc<Robot>) {
                 }
 
                 if robot.battery.load(Ordering::SeqCst) != 0 {
-                    robot.battery.store(100, Ordering::SeqCst);
+                    robot.set_battery(100);
                 } else {
                     break;
                 }

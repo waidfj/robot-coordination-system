@@ -40,7 +40,7 @@ impl Robot {
     // Robot updates it's activity
     pub fn send_heartbeat(&self) {
         // lock the heartbeat registry and update time
-        if let Ok(mut map) = HEARTBEAT_REGISTRY.try_lock() {
+        if let Ok(mut map) = HEARTBEAT_REGISTRY.lock() {
             map.insert(self.id, Instant::now());
         }
     }
