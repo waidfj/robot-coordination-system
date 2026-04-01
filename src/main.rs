@@ -4,7 +4,7 @@ use robot_coordination_system::{
         behaviour::generate_robots::generate_robots,
         entity::ROBOT_REGISTRY,
     },
-    task::behaviour::generate_tasks::generate_tasks,
+    task::entity::{TASK_QUEUE, Task},
     zone::{
         behaviour::{get_zone::get_zone, initialize_zones::initialize_zones},
         entity::ZONE_REGISTRY,
@@ -15,12 +15,18 @@ use std::{sync::atomic::Ordering, thread, time::Duration};
 fn main() {
     // Initialize zones, generate tasks and robots
     initialize_zones(["kitchen", "room 1", "room 2"].to_vec());
-    generate_tasks(10);
+    {
+        let mut task_queue = TASK_QUEUE.lock().unwrap();
+        task_queue.push_back(Task::new(1, 4, 0));
+        task_queue.push_back(Task::new(2, 4, 0));
+        task_queue.push_back(Task::new(3, 3, 2));
+    }
     generate_robots(3);
 
     update_health();
 
     // Main loop to display status of robots and zones
+    // This is only used for demonstration, it is outside the project's logic
     // IMPORTANT DECLARATION: this code is AI generated
     loop {
         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
