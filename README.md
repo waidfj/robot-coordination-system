@@ -7,6 +7,10 @@
 3. `cargo build`
 4. `cargo run`
 
+## To run the tests use the following commands:
+
+`cargo test`
+
 ## To add new work to the application:
 
 1. `git checkout -b <branch-name>`
